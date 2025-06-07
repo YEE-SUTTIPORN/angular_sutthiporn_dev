@@ -1,0 +1,52 @@
+trigger:
+  branches:
+    include:
+      - main
+
+variables:
+  buildConfiguration: 'production'
+  nodeVersion: '20.x'
+
+stages:
+- stage: BuildAndDeploy
+  displayName: Build and Deploy Angular App
+  jobs:
+  - job: DeployAngular
+    displayName: Deploy to VPS
+    pool:
+      vmImage: 'ubuntu-latest'
+
+    steps:
+
+    - task: UseNode@1
+      inputs:
+        version: '$(nodeVersion)'
+
+    - script: |
+        npm install -g @angular/cli
+      displayName: 'Install Angular CLI'
+
+    - checkout: self
+
+    - script: |
+        npm install
+        ng build --configuration $(buildConfiguration)
+      displayName: 'Build Angular App'
+
+    - task: InstallSSHKey@0
+      inputs:
+        knownHostsEntry: '$(SERVER_IP)'
+        sshPublicKey: ''
+        sshKeySecureFile: 'id_rsa'   # <-- Upload your private key to Azure DevOps secure files
+      displayName: 'Install SSH Key'
+
+    - script: |
+        scp -r ./dist/*/browser/* $(ACCESS_SERVER):/var/www/html/
+      displayName: 'Copy Files to VPS'
+
+    - script: |
+        ssh $(ACCESS_SERVER) << 'EOF'
+          rm -f /var/www/html/index.nginx-debian.html
+          echo "Deploy Completed"
+        EOF
+      displayName: 'Cleanup default nginx page'

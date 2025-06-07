@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sutthiporn-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sutthiporn-frontend
+  template:
+    metadata:
+      labels:
+        app: sutthiporn-frontend
+    spec:
+      containers:
+        - name: frontend
+          image: ayeesuttiporn/sutthiporn.dev
+          ports:
+            - containerPort: 80
